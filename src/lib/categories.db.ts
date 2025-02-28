@@ -44,6 +44,14 @@ export async function getCategory(slug: Slug): Promise<Category | null> {
   return cat ?? null;
 }
 
+export async function getCategoryById(c_id: number): Promise<Category | null> {
+  const cat = await prisma.categories.findUnique(
+    { where: {id: c_id}}
+  );
+
+  return cat ?? null;
+}
+
 export function validateCategory(categoryToValidate: unknown) {
   const result = CategoryToCreateSchema.safeParse(categoryToValidate);
 
@@ -60,7 +68,7 @@ export async function createCategory(categoryToCreate: CategoryToCreate): Promis
     data: {
       title: categoryToCreate.title,
       slug: categoryToCreate.title.toLowerCase().replaceAll(' ', '-'),
-    },
+    }
   });
 
   return createdCategory;

@@ -14,7 +14,24 @@ datasource db {
 }
 
 model Categories {
+  id      Int     @id @default(autoincrement())
+  title   String  @unique
+  slug    String   @unique
+  questions Questions[]
+}
+
+model Questions {
+  id       Int        @id @default(autoincrement())
+  text     String
+  cat_id   Int
+  category Categories @relation(fields: [cat_id], references: [id])
+  answers Answers[]
+}
+
+model Answers {
   id    Int     @id @default(autoincrement())
-  title String  @unique
-  slug String   @unique
+  text String 
+  correct Boolean
+  q_id Int
+  question Questions @relation(fields: [q_id], references: [id])
 }

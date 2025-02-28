@@ -1,16 +1,22 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { createCategory, 
   getCategories, 
   getCategory, 
   validateCategory,
   validateSlug,
   deleteCategory,
-  updateCategory } from './lib/categories.db.js'
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+  updateCategory,
+  getCategoryById } from './lib/categories.db.js'
+import { getQuestions,
+  getQuestionsByCat,
+  validateQuestion,
+  createQuestion } from './lib/questions.db.js'
 
 const app = new Hono()
 
+//INDEX ROUTE
 app.get('/', (c) => {
 
   const data =  [
@@ -35,9 +41,14 @@ app.get('/', (c) => {
   return c.json(data)
 })
 
+//CATEGORY ROUTES
 app.get('/categories', async (c) => {
-  const categories = await getCategories();
-  return c.json(categories)
+  try {
+    const categories = await getCategories();
+    return c.json(categories)
+  } catch (e) {
+    return c.json({error: "Internal server error"}, 500)
+  }
 })
 
 
@@ -68,22 +79,26 @@ app.post('/categories', async (c) => {
 
 
 app.get('/categories/:slug', async (c) => {
-  const slug = c.req.param('slug')
-
-  // Validate á hámarkslengd á slug
-  const validSlug = validateSlug(slug);
-
-  if(!validSlug.success){
-    return c.json({ error: 'invalid search', errors: validSlug.error.flatten() }, 400)
-  } 
-
-  const category = await getCategory(slug)
-
-  if (!category) {
-    return c.json({ message: 'not found' }, 404)
+  try {
+    const slug = c.req.param('slug')
+  
+    // Validate á hámarkslengd á slug
+    const validSlug = validateSlug(slug);
+  
+    if(!validSlug.success){
+      return c.json({ error: 'invalid search', errors: validSlug.error.flatten() }, 400)
+    } 
+  
+    const category = await getCategory(slug)
+  
+    if (!category) {
+      return c.json({ message: 'not found' }, 404)
+    }
+  
+    return c.json(category);
+  } catch (e) {
+    return c.json({error: "Internal server error"}, 500)
   }
-
-  return c.json(category);
 })
 
 app.patch('/categories/:slug', async (c) => {
@@ -135,10 +150,67 @@ app.delete('/categories/:slug', async (c) => {
     return;
   } catch (e){
     console.error(e);
-    return c.json({error: "Internal server error"});
+    return c.json({error: "Internal server error"}, 500);
   }
 })
 
+
+//QUESTION ROUTES
+app.get('/questions', async (c) =>{
+  try {
+    const questions = await getQuestions();
+    return c.json(questions)
+  } catch (e) {
+    return c.json({error: "Internal server error"}, 500)
+  }
+})
+
+ 
+app.post('/questions', async (c) => {
+  let questionToCreate;
+  try {
+    questionToCreate = await c.req.json();
+  } catch (e) {
+    return c.json({ error: 'invalid json' }, 400)
+  }
+
+  const validQuestion = validateQuestion(questionToCreate)
+
+  if (!validQuestion.success) {
+    return c.json({ error: 'invalid data', errors: validQuestion.error.flatten() }, 400)
+  }
+
+  if(! await getCategoryById(validQuestion.data.cat_id)){
+    return c.json({message: "Category not found in database"}, 400)
+  }
+
+  try{
+    const createdCategory = await createQuestion(validQuestion.data)
+    return c.json(createdCategory, 201)
+  } catch(e){
+    console.log(e);
+    return c.json({error: "Internal server error"}, 500)
+  }
+})
+
+app.get('/questions/:cat_id', async (c) => {
+  const cat_id = Number(c.req.param('cat_id'));
+
+  if(isNaN(cat_id)){
+    return c.json({error: "Invalid category ID, must be a number"}, 400);
+  }
+
+  if(! await getCategoryById(cat_id)){
+    return c.json({message: "Category not found in database"}, 404)
+  }
+
+  try{
+    const questionsByCat = await getQuestionsByCat(cat_id);
+    return c.json(questionsByCat)
+  }catch (e){
+    return c.json({error: "Internal server error"}, 500);
+  }
+})
 
 serve({
   fetch: app.fetch,
