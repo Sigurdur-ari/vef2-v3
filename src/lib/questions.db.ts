@@ -34,7 +34,7 @@ const questionToCreateSchema = z.object({
         .max(1024, 'Question cannot be longer than 1024 letters'),
     cat_id: z.number(),
     answers: z.array(answerToCreateSchema)
-        .min(2, "A question have at least 2 answers")
+        .min(2, "A question must have at least 2 answers")
         .max(6, "A question can have a maximum of 6 answers")
 })
 
@@ -151,7 +151,7 @@ export async function getQuestionsByCat(
     return fullQuestions;
 }
 
-export function validateQuestion(questionToValidate: QuestionToCreate){
+export function validateQuestion(questionToValidate: unknown){
     const result = questionToCreateSchema.safeParse(questionToValidate);
 
     return result;
@@ -174,7 +174,7 @@ export async function createQuestion(questionToCreate: QuestionToCreate): Promis
                 q_id: createdQuestion.id
             }
         });
-        return answer
+        return answer;
     }));
 
     const returnQuestion: Question = {
@@ -182,9 +182,71 @@ export async function createQuestion(questionToCreate: QuestionToCreate): Promis
         id: createdQuestion.id,
         cat_id: createdQuestion.cat_id,
         answers: answerArray
-    }
+    };
     
-    return returnQuestion
+    return returnQuestion;
+}
 
+export async function getQuestion(q_id: number): Promise<Question | null>{
+    const question = await prisma.questions.findUnique({
+        where: {id: q_id}
+    });
+
+    if(!question){
+        return null
+    };
+
+    const answers = await getAnswers(q_id);
+
+    const returnQuestion: Question = {
+        text: question.text,
+        id: question.id,
+        cat_id: question.cat_id,
+        answers: answers
+    };
+
+
+    return returnQuestion;
+}
+
+export async function updateQuestion(questionToUpdate: QuestionToCreate, qu_id: number): Promise<Question>{
+    const updatedQuestion = await prisma.questions.update({
+        where: {id: qu_id},
+        data: {
+            text: questionToUpdate.text,
+            cat_id: questionToUpdate.cat_id
+        }
+    });
+
+    //Virkni sem sér til þess að ef notandi breytir fjölda svara
+    //þá virkar þetta samt vel. 
+
+    //Eyða gömlum svörum
+    await prisma.answers.deleteMany({
+        where: {q_id: qu_id}
+    });
+
+    //Búa til ný svör
+    await prisma.answers.createMany({
+        data: questionToUpdate.answers.map((a) => ({
+          text: a.text,
+          correct: a.correct,
+          q_id: qu_id
+        }))
+    });
+
+    //Sækja öll ný svör
+    const updatedAnswers = await prisma.answers.findMany({
+        where: { q_id: qu_id }
+    });
+
+    const returnQuestion: Question = {
+        text: updatedQuestion.text,
+        id: qu_id,
+        cat_id: updatedQuestion.cat_id,
+        answers: updatedAnswers
+    };
+
+    return returnQuestion;
 }
 

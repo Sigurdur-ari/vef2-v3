@@ -12,7 +12,9 @@ import { createCategory,
 import { getQuestions,
   getQuestionsByCat,
   validateQuestion,
-  createQuestion } from './lib/questions.db.js'
+  createQuestion,
+  getQuestion,
+  updateQuestion } from './lib/questions.db.js'
 
 const app = new Hono()
 
@@ -34,6 +36,10 @@ app.get('/', (c) => {
     },
     {
       href: '/questions/:cat',
+      methods: ['GET'],
+    },
+    {
+      href: '/question/:question_id',
       methods: ['GET', 'PATCH', 'DELETE'],
     },
   ]
@@ -197,7 +203,7 @@ app.get('/questions/:cat_id', async (c) => {
   const cat_id = Number(c.req.param('cat_id'));
 
   if(isNaN(cat_id)){
-    return c.json({error: "Invalid category ID, must be a number"}, 400);
+    return c.json({error: "Invalid question ID, must be a number"}, 400);
   }
 
   if(! await getCategoryById(cat_id)){
@@ -210,6 +216,60 @@ app.get('/questions/:cat_id', async (c) => {
   }catch (e){
     return c.json({error: "Internal server error"}, 500);
   }
+})
+
+app.get('/question/:question_id', async (c) => {
+  const q_id = Number(c.req.param('question_id'))
+
+  if(isNaN(q_id)){
+    return c.json({error: "Invalid question ID, must be a number"}, 400);
+  }
+
+  try {
+    const question = await getQuestion(q_id);
+    return c.json(question)
+  } catch (e) {
+    return c.json({error: "Internal server error"}, 500)
+  }
+})
+
+app.patch('/question/:question_id', async (c) =>{
+  const q_id = Number(c.req.param('question_id'));
+
+  if(isNaN(q_id)){
+    return c.json({error: "Invalid question ID, must be a number"}, 400);
+  }
+
+  let questionToUpdate: unknown;
+  try{
+    questionToUpdate = await c.req.json()
+  }catch(e){
+    return c.json({ error: 'invalid json' }, 400)
+  }
+
+  const validUpdate = validateQuestion(questionToUpdate)
+  if (!validUpdate.success) {
+    return c.json({ error: 'invalid data', errors: validUpdate.error.flatten() }, 400)
+  }
+
+  if(! await getCategoryById(validUpdate.data.cat_id)){
+    return c.json({message: "Category not found in database"}, 404)
+  }
+
+  const question = await getQuestion(q_id);
+
+  if(!question){
+    return c.json({error: "Question not found in database"}, 404)
+  }
+
+  try{
+    const patchedQuestion = await updateQuestion(validUpdate.data, q_id)
+    return c.json(patchedQuestion, 200)
+  } catch(e){
+    console.log(e);
+    return c.json({error: "Internal server error"}, 500)
+  }
+
 })
 
 serve({
