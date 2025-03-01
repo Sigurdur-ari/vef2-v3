@@ -24,7 +24,7 @@ model Questions {
   id       Int        @id @default(autoincrement())
   text     String
   cat_id   Int
-  category Categories @relation(fields: [cat_id], references: [id])
+  category Categories @relation(fields: [cat_id], references: [id], onDelete: Cascade)
   answers Answers[]
 }
 
@@ -33,5 +33,5 @@ model Answers {
   text String 
   correct Boolean
   q_id Int
-  question Questions @relation(fields: [q_id], references: [id])
+  question Questions @relation(fields: [q_id], references: [id], onDelete: Cascade)
 }

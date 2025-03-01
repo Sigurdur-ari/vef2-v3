@@ -14,7 +14,8 @@ import { getQuestions,
   validateQuestion,
   createQuestion,
   getQuestion,
-  updateQuestion } from './lib/questions.db.js'
+  updateQuestion,
+  deleteQuestion } from './lib/questions.db.js'
 
 const app = new Hono()
 
@@ -108,7 +109,14 @@ app.get('/categories/:slug', async (c) => {
 })
 
 app.patch('/categories/:slug', async (c) => {
-  const prevSlug = c.req.param('slug')
+    const prevSlug = c.req.param('slug')
+  
+    // Validate á hámarkslengd á slug
+    const validSlug = validateSlug(prevSlug);
+  
+    if(!validSlug.success){
+      return c.json({ error: 'invalid search', errors: validSlug.error.flatten() }, 400)
+    } 
 
   let categoryToUpdate: unknown;
   try{
@@ -139,7 +147,14 @@ app.patch('/categories/:slug', async (c) => {
 })
 
 app.delete('/categories/:slug', async (c) => {
-  const slug = c.req.param('slug');
+    const slug = c.req.param('slug')
+  
+    // Validate á hámarkslengd á slug
+    const validSlug = validateSlug(slug);
+  
+    if(!validSlug.success){
+      return c.json({ error: 'invalid search', errors: validSlug.error.flatten() }, 400)
+    } 
   
   const category = await getCategory(slug);
 
@@ -152,8 +167,7 @@ app.delete('/categories/:slug', async (c) => {
   try{
     await deleteCategory(category);
     console.log("deleted -> ", category);
-    c.status(204);
-    return;
+    return c.body(null, 204);
   } catch (e){
     console.error(e);
     return c.json({error: "Internal server error"}, 500);
@@ -268,6 +282,31 @@ app.patch('/question/:question_id', async (c) =>{
   } catch(e){
     console.log(e);
     return c.json({error: "Internal server error"}, 500)
+  }
+
+})
+
+app.delete('/question/:question_id', async (c) =>{
+  const q_id = Number(c.req.param('question_id'))
+
+  if(isNaN(q_id)){
+    return c.json({error: "Invalid question ID, must be a number"}, 400);
+  }
+
+  const question = await getQuestion(q_id);
+
+  if(!question){
+    return c.json({error: "Question not found in database"}, 404)
+  }
+
+
+  try{
+    await deleteQuestion(question);
+    console.log("deleted -> ", question);
+    return c.body(null, 204);
+  } catch (e){
+    console.error(e);
+    return c.json({error: "Internal server error"}, 500);
   }
 
 })

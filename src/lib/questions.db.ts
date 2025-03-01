@@ -44,62 +44,6 @@ type QuestionToCreate = z.infer<typeof questionToCreateSchema>
 
 const prisma = new PrismaClient();
 
-const questionsTest = [{
-    id: 1,
-    text: "hvað er matur",
-    cat_id: 2,
-    answers: [
-        {
-            id: 1,
-            text: "svar 1",
-            q_id: 1,
-            correct: true
-        },{
-            id: 2,
-            text: "svar 2",
-            q_id: 1,
-            correct: false
-        },{
-            id: 3,
-            text: "svar 3",
-            q_id: 1,
-            correct: false
-        },{
-            id: 4,
-            text: "svar 4",
-            q_id: 1,
-            correct: false
-        },
-    ]
-},{
-    id: 2,
-    text: "hvað er html",
-    cat_id: 1,
-    answers: [
-        {
-            id: 5,
-            text: "svar 1",
-            q_id: 2,
-            correct: true
-        },{
-            id: 6,
-            text: "svar 2",
-            q_id: 2,
-            correct: false
-        },{
-            id: 7,
-            text: "svar 3",
-            q_id: 2,
-            correct: false
-        },{
-            id: 8,
-            text: "svar 4",
-            q_id: 2,
-            correct: false
-        },
-    ]
-},
-]
 
 export async function getQuestions(
     limit: number = 10,
@@ -125,7 +69,6 @@ async function getAnswers(q_id: number): Promise<Array<answer>>{
     const answers = await prisma.answers.findMany({
         where: {q_id: q_id}
     })
-    //const answers = questionsTest[q_id-1].answers;
     return answers;
 }
 
@@ -248,5 +191,11 @@ export async function updateQuestion(questionToUpdate: QuestionToCreate, qu_id: 
     };
 
     return returnQuestion;
+}
+
+export async function deleteQuestion(questionToDelete: Question){
+    await prisma.questions.delete({
+        where: {id: questionToDelete.id}
+    });
 }
 

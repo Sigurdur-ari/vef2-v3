@@ -87,10 +87,8 @@ export async function updateCategory(categoryToUpdate: CategoryToCreate, prevSlu
 }
 
 export async function deleteCategory(categoryToDelete: Category){
-  const deletedCat = await prisma.categories.delete(
+    await prisma.categories.delete(
     {
       where: {slug: categoryToDelete.slug}
-    })
-
-  return deletedCat;
+    });
 }
