@@ -1,3 +1,4 @@
+import xss from 'xss';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
 
@@ -101,18 +102,21 @@ export function validateQuestion(questionToValidate: unknown){
 }
 
 export async function createQuestion(questionToCreate: QuestionToCreate): Promise<Question>{
+    const sanitizedText = xss(questionToCreate.text);
+
     const createdQuestion = await prisma.questions.create({
         data: {
-          text: questionToCreate.text,
+          text: sanitizedText,
           cat_id: questionToCreate.cat_id,
         }
     });
 
     const answerArray = await Promise.all(
         questionToCreate.answers.map(async (a) => {
-        const answer = await prisma.answers.create({
+            const sanitizedAnswerText = xss(a.text);
+            const answer = await prisma.answers.create({
             data: {
-                text: a.text,
+                text: sanitizedAnswerText,
                 correct: a.correct,
                 q_id: createdQuestion.id
             }
@@ -153,10 +157,12 @@ export async function getQuestion(q_id: number): Promise<Question | null>{
 }
 
 export async function updateQuestion(questionToUpdate: QuestionToCreate, qu_id: number): Promise<Question>{
+    const sanitizedText = xss(questionToUpdate.text);
+
     const updatedQuestion = await prisma.questions.update({
         where: {id: qu_id},
         data: {
-            text: questionToUpdate.text,
+            text: sanitizedText,
             cat_id: questionToUpdate.cat_id
         }
     });
@@ -172,7 +178,7 @@ export async function updateQuestion(questionToUpdate: QuestionToCreate, qu_id: 
     //Búa til ný svör
     await prisma.answers.createMany({
         data: questionToUpdate.answers.map((a) => ({
-          text: a.text,
+          text: xss(a.text),
           correct: a.correct,
           q_id: qu_id
         }))

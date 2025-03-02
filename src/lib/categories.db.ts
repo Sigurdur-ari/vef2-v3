@@ -1,3 +1,4 @@
+import xss from 'xss';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
 
@@ -64,10 +65,12 @@ export function validateSlug(slug: string){
 }
 
 export async function createCategory(categoryToCreate: CategoryToCreate): Promise<Category> {
+  const sanitizedTitle = xss(categoryToCreate.title);
+
   const createdCategory = await prisma.categories.create({
     data: {
-      title: categoryToCreate.title,
-      slug: categoryToCreate.title.toLowerCase().replaceAll(' ', '-'),
+      title: sanitizedTitle,
+      slug: sanitizedTitle.toLowerCase().replaceAll(' ', '-'),
     }
   });
 
@@ -75,11 +78,13 @@ export async function createCategory(categoryToCreate: CategoryToCreate): Promis
 }
 
 export async function updateCategory(categoryToUpdate: CategoryToCreate, prevSlug: Slug): Promise<Category>{
+  const sanitizedTitle = xss(categoryToUpdate.title);
+
   const updatedCategory = await prisma.categories.update({
     where: { slug: prevSlug },
     data: {
-      title: categoryToUpdate.title,
-      slug: categoryToUpdate.title.toLowerCase().replaceAll(' ', '-'),
+      title: sanitizedTitle,
+      slug: sanitizedTitle.toLowerCase().replaceAll(' ', '-'),
     },
   });
 

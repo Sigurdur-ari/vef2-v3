@@ -16,7 +16,7 @@ import { getQuestions,
   getQuestion,
   updateQuestion,
   deleteQuestion } from './lib/questions.db.js'
-
+  
 const app = new Hono()
 
 //INDEX ROUTE
@@ -241,7 +241,12 @@ app.get('/question/:question_id', async (c) => {
 
   try {
     const question = await getQuestion(q_id);
+
+    if(!question){
+      return c.json({error: "Question not found in database"}, 404)
+    }
     return c.json(question)
+
   } catch (e) {
     return c.json({error: "Internal server error"}, 500)
   }
