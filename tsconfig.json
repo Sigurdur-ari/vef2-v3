@@ -6,7 +6,9 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "types": ["vite", "vitest/globals"],
+    "outDir": "dist",
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-  }
+  },
+  "exclude": ["vitest.config.ts"],
 }
