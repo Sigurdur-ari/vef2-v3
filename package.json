@@ -2,7 +2,9 @@
   "name": "verkefni3",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.8",
@@ -14,6 +16,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
-    "tsx": "^4.7.1"
+    "@vitest/ui": "^3.0.7",
+    "tsx": "^4.7.1",
+    "vitest": "^3.0.7"
   }
 }

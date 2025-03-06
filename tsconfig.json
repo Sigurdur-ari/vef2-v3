@@ -5,9 +5,7 @@
     "strict": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
-    "types": [
-      "node"
-    ],
+    "types": ["vite", "vitest/globals"],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
   }
