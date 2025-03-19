@@ -1,5 +1,6 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
+import { cors } from 'hono/cors';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { createCategory, 
   getCategories, 
@@ -18,6 +19,8 @@ import { getQuestions,
   deleteQuestion } from './lib/questions.db.js'
   
 const app = new Hono()
+
+app.use(cors())
 
 //INDEX ROUTE
 app.get('/', (c) => {
@@ -318,7 +321,7 @@ app.delete('/question/:question_id', async (c) =>{
 
 serve({
   fetch: app.fetch,
-  port: 3000
+  port: 8000
 }, (info) => {
   console.log(`Server is running on http://localhost:${info.port}`)
 })
